@@ -1,16 +1,11 @@
-
 export const mockApi = () => {
   return new Promise((resolve, reject) => {
-    const delay = Math.random() * 1000 + 1000;
+    const delay = 1000 + Math.random() * 1000; // 1–2 sec
 
     setTimeout(() => {
-      const shouldFail = Math.random() < 0.2;
-
-      if (shouldFail) {
-        reject(new Error("Mock API failed"));
-      } else {
-        resolve({ success: true });
-      }
+      const shouldFail = Math.random() < 0.2; // 20% failure
+      if (shouldFail) reject("Mock API Failed");
+      else resolve("Success");
     }, delay);
   });
 };

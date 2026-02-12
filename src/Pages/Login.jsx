@@ -1,33 +1,51 @@
 import { useState } from "react";
 
-function Login({ onLoginSuccess }) {
-  const [value, setValue] = useState("");
+export default function Login({ onLoginSuccess }) {
+  const [email, setEmail] = useState("");
 
-  const handleLogin = () => {
-    console.log("Login clicked, value =", value); 
+  const handleLogin = (e) => {
+    e.preventDefault();
 
-    if (!value.trim()) return;
+    if (!email.trim()) {
+      alert("Please enter email or username");
+      return;
+    }
 
-    localStorage.setItem("auth_user", value);
-    onLoginSuccess(value);
+    onLoginSuccess(email);
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h1>Login Page</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-xl p-8 shadow-lg">
+        <h1 className="text-2xl font-semibold text-white text-center mb-2">
+          Kanban Board
+        </h1>
 
-      <input
-        type="text"
-        placeholder="Username or Email"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
+        <p className="text-center text-slate-400 text-sm mb-6">
+          Sign in to continue
+        </p>
 
-      <br /><br />
+        <form onSubmit={handleLogin} className="space-y-4">
+          <input
+            type="text"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email or Username"
+            className="w-full rounded-md bg-slate-800 border border-slate-600 px-3 py-2 text-white placeholder-slate-400 outline-none focus:border-indigo-500"
+          />
 
-      <button onClick={handleLogin}>Login</button>
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 transition py-2 rounded-md text-white font-medium"
+          >
+            Login
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Mock authentication · No password required
+        </p>
+      </div>
     </div>
   );
 }
-
-export default Login;

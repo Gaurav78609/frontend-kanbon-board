@@ -1,46 +1,70 @@
-Frontend Engineering Assignment – Kanban Board
+# Frontend Engineering Assignment – Kanban Board
 
-Objective:
-Build a simplified Kanban Board application that demonstrates optimistic UI updates,
-asynchronous state handling, and automatic rollback on failure.
+## Objective
+Build a simplified Kanban Board application that demonstrates:
+- Optimistic UI updates
+- Asynchronous state handling
+- Automatic state rollback on API failure
 
-Landing Page & Mock Authentication:
+---
+
+## Landing Page & Mock Authentication
 - Simple login page
 - Accepts any non-empty username or email
-- No real backend authentication
+- No real backend authentication is used
 - User is redirected to the Kanban Board after login
-- User remains logged in after page refresh using localStorage
+- Login state persists across page refresh using localStorage
 
-Kanban Board:
-- Three columns: To Do, In Progress, Done
-- Add Item: User can add a new task to the To Do column
-- Move Item: User can move tasks between columns using drag and drop
-- Delete Item: User can remove a task
+---
 
-Mock API Rules:
+## Kanban Board Features
+- Three columns:
+  - To Do
+  - In Progress
+  - Done
+- Add Task: Users can add a new task to the **To Do** column
+- Move Task: Tasks can be moved between columns using drag and drop
+- Delete Task: Tasks can be removed from the board
+
+---
+
+## Mock API Behavior
 - Every action (Add, Move, Delete) has a simulated delay of 1–2 seconds
-- Optimistic UI: The UI updates instantly without waiting for the server response
-- Random Failures: The mock API fails randomly about 20% of the time
+- Optimistic UI updates are applied immediately without waiting for the API response
+- The mock API fails randomly approximately 20% of the time
 
-Failure Behavior:
+---
+
+## Failure Handling & Rollback
 - If the mock API fails after the delay:
-  - A clear error message is shown to the user
-  - The UI automatically rolls back to the previous state
+  - A clear and user-friendly error message is displayed
+  - The UI automatically rolls back to the previous valid state
+- This ensures data consistency while maintaining a responsive user experience
 
-Technical Requirements:
+---
+
+## Technical Requirements
 - Framework: React.js
-- Styling: Tailwind CSS (clean, minimal, responsive)
+- Styling: Tailwind CSS (clean, minimal, and responsive)
 - State Management: Proper handling of optimistic updates and rollback
-- No heavy UI or component libraries used
+- No heavy UI or component libraries are used
 
-How to Run Locally:
-- npm install
-- npm run dev
+---
 
-Trade-offs / Decisions:
-- Local component state is used due to limited application scope
-- Task persistence after refresh is not implemented as it was not required
-- UI is kept minimal to focus on application logic and async behavior
+## How to Run Locally
+```bash
+npm install
+npm run dev
 
-Author:
+
+Trade-offs & Decisions
+
+Local component state is used due to the limited scope of the application
+
+Task persistence after page refresh is not implemented as it was not required
+
+UI is intentionally kept minimal to focus on application logic and async behavior
+
+Author
+
 Gourav Singh

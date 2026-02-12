@@ -1,195 +1,174 @@
 import { useState } from "react";
-import {
-  DndContext,
-  useDraggable,
-  useDroppable,
-} from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { mockApi } from "../api/mockApi";
 
-const initialTasks = [
-  { id: "1", title: "Learn React", status: "todo" },
-  { id: "2", title: "Build Kanban Board", status: "inprogress" },
-];
+export default function Board({ user, onLogout }) {
+  const [task, setTask] = useState("");
+  const [draggedTask, setDraggedTask] = useState(null);
 
-             /* DRAGGABLE TASK */
-function DraggableTask({ task, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform } =
-    useDraggable({
-      id: task.id,
-    });
+  const [board, setBoard] = useState({
+    todo: [],
+    progress: [],
+    done: [],
+  });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
+  // ADD TASK (Optimistic)
+  const addTask = async () => {
+    if (!task.trim()) return;
+    const prev = structuredClone(board);
+
+    setBoard({ ...board, todo: [...board.todo, task] });
+    setTask("");
+
+    try {
+      await mockApi();
+    } catch {
+      alert("Failed to add task");
+      setBoard(prev);
+    }
   };
 
-  return (
+  // MOVE TASK (Optimistic)
+  const moveTask = async (task, from, to) => {
+    const prev = structuredClone(board);
+
+    setBoard({
+      ...board,
+      [from]: board[from].filter((t) => t !== task),
+      [to]: [...board[to], task],
+    });
+
+    try {
+      await mockApi();
+    } catch {
+      alert("Move failed");
+      setBoard(prev);
+    }
+  };
+
+  // DELETE TASK (Optimistic)
+  const deleteTask = async (task, from) => {
+    const prev = structuredClone(board);
+
+    setBoard({
+      ...board,
+      [from]: board[from].filter((t) => t !== task),
+    });
+
+    try {
+      await mockApi();
+    } catch {
+      alert("Delete failed");
+      setBoard(prev);
+    }
+  };
+
+  const Column = ({ title, items, from, accent }) => (
     <div
-      ref={setNodeRef}
-      style={style}
-      className="flex justify-between items-center p-2 mb-2 rounded bg-gray-800 text-white"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={() => {
+        if (!draggedTask || draggedTask.from === from) return;
+        moveTask(draggedTask.task, draggedTask.from, from);
+        setDraggedTask(null);
+      }}
+      className="bg-slate-900/70 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 min-h-[320px]"
     >
-      {/* DRAG HANDLE  */}
-      <span
-        {...listeners}
-        {...attributes}
-        className="cursor-move select-none"
-      >
-        {task.title}
-      </span>
+      <h2 className={`text-lg font-semibold mb-4 ${accent}`}>
+        {title}
+      </h2>
 
-      {/* DELETE BUTTON */}
-      <button
-        onClick={() => onDelete(task.id)}
-        className="bg-red-500 px-2 py-1 rounded text-sm hover:bg-red-600"
-      > Delete
-      </button>
-    </div>
-  );
-}
+      {items.length === 0 && (
+        <p className="text-sm text-slate-400 italic">No tasks</p>
+      )}
 
-                  /*COLUMN */
-function Column({ id, title, tasks, onDelete }) {
-  const { setNodeRef } = useDroppable({ id });
+      {items.map((t, i) => (
+        <div
+          key={i}
+          draggable
+          onDragStart={() => setDraggedTask({ task: t, from })}
+          className="bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 mb-3 cursor-grab active:cursor-grabbing flex justify-between items-center"
+        >
+          <span className="text-sm text-white">{t}</span>
 
-  return (
-    <div
-      ref={setNodeRef}
-      className="bg-white rounded-xl shadow p-4 min-h-[300px]"
-    >
-      <h2 className="text-xl font-semibold mb-4">{title}</h2>
+          <div className="flex gap-2 text-xs">
+            {from === "todo" && (
+              <button
+                onClick={() => moveTask(t, from, "progress")}
+                className="text-blue-400"
+              >
+                ▶
+              </button>
+            )}
 
-      {tasks.map((task) => (
-        <DraggableTask
-          key={task.id}
-          task={task}
-          onDelete={onDelete}
-        />
+            {from === "progress" && (
+              <>
+                <button
+                  onClick={() => moveTask(t, from, "todo")}
+                  className="text-slate-400"
+                >
+                  ◀
+                </button>
+                <button
+                  onClick={() => moveTask(t, from, "done")}
+                  className="text-green-400"
+                >
+                  ▶
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => deleteTask(t, from)}
+              className="text-red-400"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       ))}
     </div>
   );
-}
-
-           /*  BOARD  */
-export default function Board({ user }) {
-  const [tasks, setTasks] = useState(initialTasks);
-  const [newTask, setNewTask] = useState("");
-  const [error, setError] = useState("");
-
-        /* ADD TASK */
-  const handleAddTask = () => {
-    if (!newTask.trim()) return;
-
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        title: newTask,
-        status: "todo",
-      },
-    ]);
-
-    setNewTask("");
-  };
-
-  /* MOVE TASK (Optimistic + Rollback) */
-  const handleDragEnd = async (event) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const previousTasks = [...tasks];
-
-    // optimistic update
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === active.id
-          ? { ...task, status: over.id }
-          : task
-      )
-    );
-
-    try {
-      await mockApi();
-    } catch (err) {
-      setTasks(previousTasks);
-      setError("Failed to move task");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
-
-  /* DELETE TASK (Optimistic + Rollback) */
-  const handleDelete = async (taskId) => {
-    const previousTasks = [...tasks];
-
-    setTasks((prev) =>
-      prev.filter((task) => task.id !== taskId)
-    );
-
-    try {
-      await mockApi();
-    } catch (err) {
-      setTasks(previousTasks);
-      setError(" Failed to delete task");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
-
-  const filterTasks = (status) =>
-    tasks.filter((task) => task.status === status);
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <div className="min-h-screen bg-gray-100 p-8">
-        <h1 className="text-3xl font-bold mb-6">
-          Kanban Board – {user}
-        </h1>
-
-        {error && (
-          <div className="bg-red-500 text-white px-4 py-2 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* ADD TASK */}
-        <div className="mb-6 flex gap-2">
-          <input
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            placeholder="New task..."
-            className="border px-3 py-2 rounded w-64"
-          />
-          <button
-            onClick={handleAddTask}
-            className="bg-blue-500 text-white px-4 rounded hover:bg-blue-600"
-          >
-            Add
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white p-8">
+      {/* HEADER */}
+      <div className="mb-10 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold">Kanban Board</h1>
+          <p className="text-slate-400 mt-1">
+            {user} · Optimistic UI · Drag & Drop
+          </p>
         </div>
 
-        {/* COLUMNS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Column
-            id="todo"
-            title="To Do"
-            tasks={filterTasks("todo")}
-            onDelete={handleDelete}
-          />
-
-          <Column
-            id="inprogress"
-            title="In Progress"
-            tasks={filterTasks("inprogress")}
-            onDelete={handleDelete}
-          />
-
-          <Column
-            id="done"
-            title="Done"
-            tasks={filterTasks("done")}
-            onDelete={handleDelete}
-          />
-        </div>
+        <button
+          onClick={onLogout}
+          className="bg-red-500 hover:bg-red-400 px-4 py-2 rounded-xl text-sm"
+        >
+          Logout
+        </button>
       </div>
-    </DndContext>
+
+      {/* ADD TASK */}
+      <div className="flex gap-3 mb-10 max-w-lg">
+        <input
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
+          placeholder="Type a new task..."
+          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white placeholder-slate-400 outline-none"
+        />
+        <button
+          onClick={addTask}
+          className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-xl"
+        >
+          Add
+        </button>
+      </div>
+
+      {/* BOARD */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Column title="To Do" items={board.todo} from="todo" accent="text-blue-400" />
+        <Column title="In Progress" items={board.progress} from="progress" accent="text-yellow-400" />
+        <Column title="Done" items={board.done} from="done" accent="text-green-400" />
+      </div>
+    </div>
   );
 }
