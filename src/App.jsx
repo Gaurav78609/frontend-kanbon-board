@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import Login from "./pages/Login";
-import Board from "./pages/Board";
+import Login from "./Pages/Login";
+import Board from "./Pages/Board";
 
 function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
